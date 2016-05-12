@@ -15,8 +15,9 @@
  */
 package io.jsonwebtoken.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.core.JsonProcessingException;
+//import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.CompressionCodec;
 import io.jsonwebtoken.Header;
@@ -27,6 +28,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.crypto.DefaultJwtSigner;
 import io.jsonwebtoken.impl.crypto.JwtSigner;
+import io.jsonwebtoken.impl.json.ObjectMapper;
 import io.jsonwebtoken.lang.Assert;
 import io.jsonwebtoken.lang.Collections;
 import io.jsonwebtoken.lang.Objects;
@@ -39,7 +41,7 @@ import java.util.Map;
 
 public class DefaultJwtBuilder implements JwtBuilder {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     private Header header;
     private Claims claims;
@@ -50,6 +52,10 @@ public class DefaultJwtBuilder implements JwtBuilder {
     private byte[]             keyBytes;
 
     private CompressionCodec compressionCodec;
+
+    public DefaultJwtBuilder(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public JwtBuilder setHeader(Header header) {
@@ -302,7 +308,7 @@ public class DefaultJwtBuilder implements JwtBuilder {
             byte[] bytes;
             try {
                 bytes = this.payload != null ? payload.getBytes(Strings.UTF_8) : toJson(claims);
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 throw new IllegalArgumentException("Unable to serialize claims object to json.");
             }
 
@@ -343,7 +349,7 @@ public class DefaultJwtBuilder implements JwtBuilder {
         byte[] bytes;
         try {
             bytes = toJson(o);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             throw new IllegalStateException(errMsg, e);
         }
 
@@ -351,7 +357,9 @@ public class DefaultJwtBuilder implements JwtBuilder {
     }
 
 
-    protected byte[] toJson(Object object) throws  JsonProcessingException {
-        return OBJECT_MAPPER.writeValueAsBytes(object);
+    protected byte[] toJson(Object object) throws Exception {
+        return objectMapper.toJsonBytes(object);
+        //return gson.toJson(object).getBytes(Charset.forName("UTF-8"));
+        //return OBJECT_MAPPER.writeValueAsBytes(object);
     }
 }

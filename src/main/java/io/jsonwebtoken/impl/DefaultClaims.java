@@ -120,8 +120,8 @@ public class DefaultClaims extends JwtMap implements Claims {
             value = getDate(claimName);
         }
 
-        if (requiredType == Date.class && value instanceof Long) {
-            value = new Date((Long)value);
+        if (requiredType == Date.class && value instanceof Number) {
+            value = new Date(((Number)value).longValue());
         }
 
         if (!requiredType.isInstance(value)) {

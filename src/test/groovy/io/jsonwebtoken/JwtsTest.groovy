@@ -15,7 +15,10 @@
  */
 package io.jsonwebtoken
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.gson.Gson
+
+
+//import com.fasterxml.jackson.databind.ObjectMapper
 import io.jsonwebtoken.impl.DefaultHeader
 import io.jsonwebtoken.impl.DefaultJwsHeader
 import io.jsonwebtoken.impl.TextCodec
@@ -25,7 +28,8 @@ import io.jsonwebtoken.impl.compression.GzipCompressionCodec
 import io.jsonwebtoken.impl.crypto.EllipticCurveProvider
 import io.jsonwebtoken.impl.crypto.MacProvider
 import io.jsonwebtoken.impl.crypto.RsaProvider
-import io.jsonwebtoken.lang.Strings
+import io.jsonwebtoken.impl.json.ObjectMapper
+import io.jsonwebtoken.impl.json.ObjectMapperFactory
 import org.junit.Test
 
 import javax.crypto.Mac
@@ -612,9 +616,9 @@ class JwtsTest {
         PublicKey publicKey = kp.getPublic();
         PrivateKey privateKey = kp.getPrivate();
 
-        ObjectMapper om = new ObjectMapper()
-        String header = TextCodec.BASE64URL.encode(om.writeValueAsString(['alg': 'HS256']))
-        String body = TextCodec.BASE64URL.encode(om.writeValueAsString('foo'))
+        ObjectMapper om = ObjectMapperFactory.INSTANCE.defaultObjectMapper()
+        String header = TextCodec.BASE64URL.encode(om.toJson(['alg': 'HS256']))
+        String body = TextCodec.BASE64URL.encode(om.toJson('foo'))
         String compact = header + '.' + body + '.'
 
         // Now for the forgery: simulate an attacker using the RSA public key to sign a token, but
@@ -645,9 +649,9 @@ class JwtsTest {
         PublicKey publicKey = kp.getPublic();
         //PrivateKey privateKey = kp.getPrivate();
 
-        ObjectMapper om = new ObjectMapper()
-        String header = TextCodec.BASE64URL.encode(om.writeValueAsString(['alg': 'HS256']))
-        String body = TextCodec.BASE64URL.encode(om.writeValueAsString('foo'))
+        ObjectMapper om = ObjectMapperFactory.INSTANCE.defaultObjectMapper()
+        String header = TextCodec.BASE64URL.encode(om.toJson(['alg': 'HS256']))
+        String body = TextCodec.BASE64URL.encode(om.toJson('foo'))
         String compact = header + '.' + body + '.'
 
         // Now for the forgery: simulate an attacker using the RSA public key to sign a token, but
@@ -678,9 +682,10 @@ class JwtsTest {
         PublicKey publicKey = kp.getPublic();
         //PrivateKey privateKey = kp.getPrivate();
 
-        ObjectMapper om = new ObjectMapper()
-        String header = TextCodec.BASE64URL.encode(om.writeValueAsString(['alg': 'HS256']))
-        String body = TextCodec.BASE64URL.encode(om.writeValueAsString('foo'))
+        //ObjectMapper om = new ObjectMapper()
+        Gson gson = new Gson();
+        String header = TextCodec.BASE64URL.encode(gson.toJson(['alg': 'HS256']))
+        String body = TextCodec.BASE64URL.encode(gson.toJson('foo'))
         String compact = header + '.' + body + '.'
 
         // Now for the forgery: simulate an attacker using the Elliptic Curve public key to sign a token, but

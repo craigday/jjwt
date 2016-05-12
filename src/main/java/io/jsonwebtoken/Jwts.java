@@ -20,6 +20,8 @@ import io.jsonwebtoken.impl.DefaultHeader;
 import io.jsonwebtoken.impl.DefaultJwsHeader;
 import io.jsonwebtoken.impl.DefaultJwtBuilder;
 import io.jsonwebtoken.impl.DefaultJwtParser;
+import io.jsonwebtoken.impl.json.ObjectMapper;
+import io.jsonwebtoken.impl.json.ObjectMapperFactory;
 
 import java.util.Map;
 
@@ -102,7 +104,16 @@ public final class Jwts {
      * @return a new {@link JwtParser} instance that can be configured and then used to parse JWT strings.
      */
     public static JwtParser parser() {
-        return new DefaultJwtParser();
+        return new DefaultJwtParser(ObjectMapperFactory.INSTANCE.defaultObjectMapper());
+    }
+
+    /**
+     * Returns a new {@link JwtParser} instance that can be configured and then used to parse JWT strings.
+     *
+     * @return a new {@link JwtParser} instance that can be configured and then used to parse JWT strings.
+     */
+    public static JwtParser parser(ObjectMapperType objectMapperType) {
+        return new DefaultJwtParser(ObjectMapperFactory.INSTANCE.newObjectMapper(objectMapperType));
     }
 
     /**
@@ -113,6 +124,17 @@ public final class Jwts {
      * strings.
      */
     public static JwtBuilder builder() {
-        return new DefaultJwtBuilder();
+        return new DefaultJwtBuilder(ObjectMapperFactory.INSTANCE.defaultObjectMapper());
+    }
+
+    /**
+     * Returns a new {@link JwtBuilder} instance that can be configured and then used to create JWT compact serialized
+     * strings.
+     *
+     * @return a new {@link JwtBuilder} instance that can be configured and then used to create JWT compact serialized
+     * strings.
+     */
+    public static JwtBuilder builder(ObjectMapperType objectMapperType) {
+        return new DefaultJwtBuilder(ObjectMapperFactory.INSTANCE.newObjectMapper(objectMapperType));
     }
 }

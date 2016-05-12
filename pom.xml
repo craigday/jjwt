@@ -62,6 +62,7 @@
         <buildNumber>${user.name}-${maven.build.timestamp}</buildNumber>
 
         <jackson.version>2.7.0</jackson.version>
+        <gson.version>2.6.2</gson.version>
 
         <!-- Optional Runtime Dependencies: -->
         <bouncycastle.version>1.51</bouncycastle.version>
@@ -84,6 +85,14 @@
         </dependency>
 
         <!-- Optional Dependencies: -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
+            <scope>compile</scope>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>

@@ -15,22 +15,29 @@
  */
 package io.jsonwebtoken.impl
 
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.JsonMappingException
 import io.jsonwebtoken.Jwts
+
+//import com.fasterxml.jackson.core.JsonProcessingException
+//import com.fasterxml.jackson.databind.JsonMappingException
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.impl.compression.CompressionCodecs
 import io.jsonwebtoken.impl.crypto.MacProvider
+import io.jsonwebtoken.impl.json.JacksonObjectMapper
+import io.jsonwebtoken.impl.json.ObjectMapperFactory
 import org.junit.Test
 
 import static org.junit.Assert.*
 
 class DefaultJwtBuilderTest {
 
+    DefaultJwtBuilder createBuilder() {
+        return new DefaultJwtBuilder(ObjectMapperFactory.INSTANCE.defaultObjectMapper())
+    }
+
     @Test
     void testSetHeader() {
         def h = Jwts.header()
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setHeader(h)
         assertSame b.header, h
     }
@@ -38,7 +45,7 @@ class DefaultJwtBuilderTest {
     @Test
     void testSetHeaderFromMap() {
         def m = [foo: 'bar']
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setHeader(m)
         assertNotNull b.header
         assertEquals b.header.size(), 1
@@ -48,7 +55,7 @@ class DefaultJwtBuilderTest {
     @Test
     void testSetHeaderParams() {
         def m = [a: 'b', c: 'd']
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setHeaderParams(m)
         assertNotNull b.header
         assertEquals b.header.size(), 2
@@ -58,7 +65,7 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testSetHeaderParam() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setHeaderParam('foo', 'bar')
         assertNotNull b.header
         assertEquals b.header.size(), 1
@@ -67,7 +74,7 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testSetClaims() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         def c = Jwts.claims()
         b.setClaims(c)
         assertNotNull b.claims
@@ -76,7 +83,7 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testClaim() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.claim('foo', 'bar')
         assertNotNull b.claims
         assertEquals b.claims.size(), 1
@@ -85,7 +92,7 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testExistingClaimsAndSetClaim() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         def c = Jwts.claims()
         b.setClaims(c)
         b.claim('foo', 'bar')
@@ -98,7 +105,7 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testRemoveClaimBySettingNullValue() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.claim('foo', 'bar')
         assertNotNull b.claims
         assertEquals b.claims.size(), 1
@@ -111,7 +118,7 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testCompactWithoutBody() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         try {
             b.compact()
             fail()
@@ -122,7 +129,7 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testCompactWithoutPayloadOrClaims() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         try {
             b.compact()
             fail()
@@ -133,7 +140,7 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testCompactWithBothPayloadAndClaims() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setPayload('foo')
         b.claim('a', 'b')
         try {
@@ -146,7 +153,7 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testCompactWithBothKeyAndKeyBytes() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setPayload('foo')
         def key = MacProvider.generateKey()
         b.signWith(SignatureAlgorithm.HS256, key)
@@ -161,7 +168,7 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testCompactWithJwsHeader() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setHeader(Jwts.jwsHeader().setKeyId('a'))
         b.setPayload('foo')
         def key = MacProvider.generateKey()
@@ -171,13 +178,12 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testBase64UrlEncodeError() {
-
-        def b = new DefaultJwtBuilder() {
+        def b = new DefaultJwtBuilder(new JacksonObjectMapper() {
             @Override
-            protected byte[] toJson(Object o) throws JsonProcessingException {
-                throw new JsonMappingException('foo')
+            byte[] toJsonBytes(Object object) {
+                throw new Exception("foo")
             }
-        }
+        });
 
         try {
             b.setPayload('foo').compact()
@@ -190,13 +196,13 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testCompactCompressionCodecJsonProcessingException() {
-        def b = new DefaultJwtBuilder() {
+        def b = new DefaultJwtBuilder(new JacksonObjectMapper() {
             @Override
-            protected byte[] toJson(Object o) throws JsonProcessingException {
-                if (o instanceof DefaultJwsHeader) { return super.toJson(o) }
-                throw new JsonProcessingException('simulate json processing exception on claims')
+            byte[] toJsonBytes(Object object) {
+                if (object instanceof DefaultJwsHeader) { return super.toJsonBytes(object) }
+                throw new Exception('simulate json processing exception on claims')
             }
-        }
+        })
 
         def c = Jwts.claims().setSubject("Joe");
 
@@ -212,7 +218,7 @@ class DefaultJwtBuilderTest {
     void testSignWithBytesWithoutHmac() {
         def bytes = new byte[16];
         try {
-            new DefaultJwtBuilder().signWith(SignatureAlgorithm.ES256, bytes);
+            createBuilder().signWith(SignatureAlgorithm.ES256, bytes);
             fail()
         } catch (IllegalArgumentException iae) {
             assertEquals "Key bytes may only be specified for HMAC signatures.  If using RSA or Elliptic Curve, use the signWith(SignatureAlgorithm, Key) method instead.", iae.message
@@ -222,7 +228,7 @@ class DefaultJwtBuilderTest {
     @Test
     void testSignWithBase64EncodedBytesWithoutHmac() {
         try {
-            new DefaultJwtBuilder().signWith(SignatureAlgorithm.ES256, 'foo');
+            createBuilder().signWith(SignatureAlgorithm.ES256, 'foo');
             fail()
         } catch (IllegalArgumentException iae) {
             assertEquals "Base64-encoded key bytes may only be specified for HMAC signatures.  If using RSA or Elliptic Curve, use the signWith(SignatureAlgorithm, Key) method instead.", iae.message
@@ -232,70 +238,70 @@ class DefaultJwtBuilderTest {
 
     @Test
     void testSetHeaderParamsWithNullMap() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setHeaderParams(null)
         assertNull b.header
     }
 
     @Test
     void testSetHeaderParamsWithEmptyMap() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setHeaderParams([:])
         assertNull b.header
     }
 
     @Test
     void testSetIssuerWithNull() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setIssuer(null)
         assertNull b.claims
     }
 
     @Test
     void testSetSubjectWithNull() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setSubject(null)
         assertNull b.claims
     }
 
     @Test
     void testSetAudienceWithNull() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setAudience(null)
         assertNull b.claims
     }
 
     @Test
     void testSetIdWithNull() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setId(null)
         assertNull b.claims
     }
 
     @Test
     void testClaimNullValue() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.claim('foo', null)
         assertNull b.claims
     }
 
     @Test
     void testSetNullExpirationWithNullClaims() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setExpiration(null)
         assertNull b.claims
     }
 
     @Test
     void testSetNullNotBeforeWithNullClaims() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setNotBefore(null)
         assertNull b.claims
     }
 
     @Test
     void testSetNullIssuedAtWithNullClaims() {
-        def b = new DefaultJwtBuilder()
+        def b = createBuilder()
         b.setIssuedAt(null)
         assertNull b.claims
     }

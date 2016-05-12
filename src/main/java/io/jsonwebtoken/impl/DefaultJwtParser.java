@@ -15,7 +15,8 @@
  */
 package io.jsonwebtoken.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.jsonwebtoken.ClaimJwtException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Clock;
@@ -41,6 +42,7 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.impl.compression.DefaultCompressionCodecResolver;
 import io.jsonwebtoken.impl.crypto.DefaultJwtSignatureValidator;
 import io.jsonwebtoken.impl.crypto.JwtSignatureValidator;
+import io.jsonwebtoken.impl.json.ObjectMapper;
 import io.jsonwebtoken.lang.Assert;
 import io.jsonwebtoken.lang.Objects;
 import io.jsonwebtoken.lang.Strings;
@@ -58,7 +60,7 @@ public class DefaultJwtParser implements JwtParser {
     //don't need millis since JWT date fields are only second granularity:
     private static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     private byte[] keyBytes;
 
@@ -71,6 +73,10 @@ public class DefaultJwtParser implements JwtParser {
     Claims expectedClaims = new DefaultClaims();
 
     private Clock clock = DefaultClock.INSTANCE;
+
+    public DefaultJwtParser(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public JwtParser requireIssuedAt(Date issuedAt) {
@@ -418,9 +424,9 @@ public class DefaultJwtParser implements JwtParser {
             } else if (
                 expectedClaimValue instanceof Date &&
                 actualClaimValue != null &&
-                actualClaimValue instanceof Long
+                actualClaimValue instanceof Number
             ) {
-                actualClaimValue = new Date((Long)actualClaimValue);
+                actualClaimValue = new Date(((Number)actualClaimValue).longValue());
             }
 
             InvalidClaimException invalidClaimException = null;
@@ -531,7 +537,7 @@ public class DefaultJwtParser implements JwtParser {
     @SuppressWarnings("unchecked")
     protected Map<String, Object> readValue(String val) {
         try {
-            return objectMapper.readValue(val, Map.class);
+            return objectMapper.fromJson(val, Map.class);
         } catch (IOException e) {
             throw new MalformedJwtException("Unable to read JSON value: " + val, e);
         }
